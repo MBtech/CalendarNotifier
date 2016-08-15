@@ -17,6 +17,8 @@ except ImportError:
 
 import time
 import notification
+import dateutil.parser
+
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/calendar-python-quickstart.json
 SCOPES = 'https://www.googleapis.com/auth/calendar'
@@ -66,6 +68,8 @@ def get_events(service):
         #print(event)
         #print(start, event['summary'])
     return events
+
+
 def notify(id_set, events, event_type):
     for e in id_set:
         for event in events:
@@ -81,14 +85,43 @@ def notify(id_set, events, event_type):
                     description += event['end']['date'] + " to "
                 notification.notify("Event " + event_type, event['summary'], description, sound=True)
 
+def event_change(oldevents, newevents, same_ids):
+    changed_ids = list()
+    for i in same_ids:
+        for event in oldevents:
+            if event['id'] == i:
+                lastupdate = event['updated']
+                break
+        for event in newevents:
+            if event['id']==i:
+                newupdate = event['updated']
+                break
+        last = dateutil.parser.parse(lastupdate)
+        new = dateutil.parser.parse(newupdate)
+        if last != new:
+            changed_ids.append(i)
+    return changed_ids
+    # changed_events = list()
+    # for i in changed_ids:
+    #     for event in newevents:
+    #         if event['id'] ==i:
+    #             changed_events.append(event)
+    #
+    # return changed_events
+
 def compare_events(events1, events2):
     found = False
     id1 = set([e['id'] for e in events1])
     id2 = set([e['id'] for e in events2])
     deleted = id1.difference(id2)
     created = id2.difference(id1)
+    same = id1.intersection(id1)
+
     notify(deleted, events1, "Deleted")
     notify(created, events2, "Created")
+
+    changed = event_change(events1,events2,same)
+    notify(changed, events1, "Changed")
 
 def main():
     """Shows basic usage of the Google Calendar API.
@@ -100,11 +133,12 @@ def main():
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
     events = get_events(service)
-    time.sleep(60)
+    time.sleep(10)
     while(True):
         tmp = get_events(service)
         compare_events(events,tmp)
-        time.sleep(60)
+        events = tmp
+        time.sleep(10)
     # event = {
     #     'summary': 'Google I/O 2015',
     #       'location': '800 Howard St., San Francisco, CA 94103',
