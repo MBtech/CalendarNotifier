@@ -16,8 +16,17 @@ except ImportError:
     flags = None
 
 import time
-import notification
 import dateutil.parser
+import platform
+
+operatingS = platform.system()
+if operatingS == "Linux":
+    from gi.repository import Notify
+elif operatingS == "Darwin":
+    import notification
+else:
+    print("OS not supported")
+    quit()
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/calendar-python-quickstart.json
@@ -83,7 +92,11 @@ def notify(id_set, events, event_type):
                     description += event['end']['dateTime']
                 else:
                     description += event['end']['date'] + " to "
-                notification.notify("Event " + event_type, event['summary'], description, sound=True)
+                if operatingS=="Darwin":
+                    notification.notify("Event " + event_type, event['summary'], description, sound=True)
+                elif operatinS == "Linux":
+                    Notify.init("Calendar Notifier")
+                    Notify.Notification.new("Event " + event_type, event['summary'] +"\n"+ description).show()
 
 def event_change(oldevents, newevents, same_ids):
     changed_ids = list()
