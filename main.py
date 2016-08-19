@@ -1,3 +1,4 @@
+#!/usr/local/bin/python2.7
 from __future__ import print_function
 import httplib2
 import os
@@ -93,7 +94,7 @@ def notify(id_set, events, event_type):
                 else:
                     description += event['end']['date'] + " to "
                 if operatingS=="Darwin":
-                    notification.notify("Event " + event_type, event['summary'], description, sound=True)
+                    notification.MountainLionNotification.notify(notification.MountainLionNotification.alloc().init(),"Event " + event_type, event['summary'], description, sound=True)
                 elif operatinS == "Linux":
                     Notify.init("Calendar Notifier")
                     Notify.Notification.new("Event " + event_type, event['summary'] +"\n"+ description).show()
@@ -114,13 +115,23 @@ def event_change(oldevents, newevents, same_ids):
         if last != new:
             changed_ids.append(i)
     return changed_ids
-    # changed_events = list()
-    # for i in changed_ids:
-    #     for event in newevents:
-    #         if event['id'] ==i:
-    #             changed_events.append(event)
-    #
-    # return changed_events
+
+def deleted_filter(deleted, events1):
+    now = datetime.datetime.utcnow().isoformat()+ 'Z'
+    filtered = set()
+    for i in deleted:
+        for event in events1:
+            if event['id'] == i:
+                event_end = '';
+                if 'dateTime' in event['end']:
+                    event_end = event['end']['dateTime']
+                else:
+                    event_end = event['end']['date']
+                end_time = dateutil.parser.parse(event_end)
+                now_time = dateutil.parser.parse(now)
+                if end_time > now_time:
+                    filtered.add(i)
+    return filtered
 
 def compare_events(events1, events2):
     found = False
@@ -130,6 +141,7 @@ def compare_events(events1, events2):
     created = id2.difference(id1)
     same = id1.intersection(id1)
 
+    deleted = deleted_filter(deleted, events1)
     notify(deleted, events1, "Deleted")
     notify(created, events2, "Created")
 
@@ -146,12 +158,14 @@ def main():
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
     events = get_events(service)
-    time.sleep(10)
+    time.sleep(30)
     while(True):
         tmp = get_events(service)
+        print(events)
+        print(tmp)
         compare_events(events,tmp)
-        events = tmp
-        time.sleep(10)
+        events = list(tmp)
+        time.sleep(30)
     # event = {
     #     'summary': 'Google I/O 2015',
     #       'location': '800 Howard St., San Francisco, CA 94103',

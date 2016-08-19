@@ -33,7 +33,17 @@ In order to setup this application you need to have credentials to use Google Ca
 After you are done with the setup you can run the program using:
 
     python main.py
+To run the program as daemon in Mac, we need to use **launchctl**.
+
+Edit the plist file to replace *repo_path* with the path to this repository.
+
+Copy the plist file to **~/Library/LaunchAgents/**
+
+    launchctl load ~/Library/LaunchAgents/com.learningcurve.mb.calendarnotifier.plist
 ## Work in progress
 * Make the program work for Windows as well
-* Add the functionality to the run the program as daemon on Mac OS
 * Add the instructions to run it as daemon on Linux
+
+References:
+
+* [Working with Python linux notification API](http://www.devdungeon.com/content/desktop-notifications-python-libnotify)
